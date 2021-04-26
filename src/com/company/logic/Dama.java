@@ -18,14 +18,24 @@ public class Dama {
         this.columns = 8;
         this.selected = false;
         this.validMoves = new ArrayList<>();
+//        this.field = new int[][]{
+//                {0,2,0,2,0,2,0,2},
+//                {2,0,2,0,2,0,2,0},
+//                {0,2,0,2,0,2,0,2},
+//                {0,0,0,0,0,0,0,0},
+//                {0,0,0,0,0,0,0,0},
+//                {1,0,1,0,1,0,1,0},
+//                {0,1,0,1,0,1,0,1},
+//                {1,0,1,0,1,0,1,0}
+//        };
         this.field = new int[][]{
                 {0,2,0,2,0,2,0,2},
                 {2,0,2,0,2,0,2,0},
-                {0,2,0,2,0,2,0,2},
+                {0,0,0,2,0,2,0,2},
+                {0,0,1,0,1,0,0,0},
                 {0,0,0,0,0,0,0,0},
-                {0,0,0,0,0,0,0,0},
-                {1,0,1,0,1,0,1,0},
-                {0,1,0,1,0,1,0,1},
+                {0,0,0,0,1,0,1,0},
+                {0,0,0,1,0,1,0,0},
                 {1,0,1,0,1,0,1,0}
         };
         this.p1 = false;
@@ -42,12 +52,12 @@ public class Dama {
     }
 
     public void ai() {
+        AI AI = new AI();
         Move best = AI.getBest(this.field);
         if(best == null) {
             p1 = true;
             return;
         }
-        System.out.println(best.getFrom().getX()+" "+best.getFrom().getY()+" "+best.getTo().getX()+" "+best.getTo().getY());
         this.field[best.getFrom().getY()][best.getFrom().getX()] = best.isKing() ? 2+4 : 4+4 ;
         this.field[best.getFrom().getY()][best.getFrom().getX()] = 0;
         if(best.isKing()) this.field[best.getTo().getY()][best.getTo().getX()] = 4;
