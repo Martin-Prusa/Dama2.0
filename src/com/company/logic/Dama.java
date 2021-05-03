@@ -18,14 +18,24 @@ public class Dama {
         this.columns = 8;
         this.selected = false;
         this.validMoves = new ArrayList<>();
+//        this.field = new int[][]{
+//                {0,2,0,2,0,2,0,2},
+//                {2,0,2,0,2,0,2,0},
+//                {0,2,0,2,0,2,0,2},
+//                {0,0,0,0,0,0,0,0},
+//                {0,0,0,0,0,0,0,0},
+//                {1,0,1,0,1,0,1,0},
+//                {0,1,0,1,0,1,0,1},
+//                {1,0,1,0,1,0,1,0}
+//        };
         this.field = new int[][]{
                 {0,2,0,2,0,2,0,2},
                 {2,0,2,0,2,0,2,0},
-                {0,2,0,2,0,2,0,2},
+                {0,0,0,2,0,2,0,2},
+                {0,0,1,0,1,0,0,0},
                 {0,0,0,0,0,0,0,0},
-                {0,0,0,0,0,0,0,0},
-                {1,0,1,0,1,0,1,0},
-                {0,1,0,1,0,1,0,1},
+                {0,0,0,0,1,0,1,0},
+                {0,0,0,1,0,1,0,0},
                 {1,0,1,0,1,0,1,0}
         };
         this.p1 = false;
@@ -41,6 +51,23 @@ public class Dama {
         return columns;
     }
 
+    public void ai() {
+        AI AI = new AI();
+        Move best = AI.getBest(this.field);
+        if(best == null) {
+            p1 = true;
+            return;
+        }
+        this.field[best.getFrom().getY()][best.getFrom().getX()] = best.isKing() ? 2+4 : 4+4 ;
+        this.field[best.getFrom().getY()][best.getFrom().getX()] = 0;
+        if(best.isKing()) this.field[best.getTo().getY()][best.getTo().getX()] = 4;
+        else this.field[best.getTo().getY()][best.getTo().getX()] = 2;
+        this.removeStone(best.getTo().getX(), best.getTo().getY(), best.getFrom().getX(), best.getFrom().getY());
+        this.validMoves.clear();
+        this.normalToDama();
+        this.checkWinner();
+    }
+
     public void click(int x, int y) {
         boolean contains = false;
         for (Coordinate validMove : getValidMoves()) {
@@ -51,18 +78,17 @@ public class Dama {
         }
         if(white && !selected && getValue(x,y) % 2 != 0) {
             select(x,y);
-        } else if(!white && !selected && getValue(x,y) % 2 == 0 && getValue(x,y) != 0) {
-            select(x,y);
-        } else if(selected && contains) {
+        }
+        else if(selected && contains) {
             this.field[y][x] = getValue(coord.getX(),coord.getY())-4;
             this.field[coord.getY()][coord.getX()] = 0;
             this.removeStone(x,y, coord.getX(), coord.getY());
             this.validMoves.clear();
             this.normalToDama();
             this.checkWinner();
-            coord = null;
-            white = !white;
-        } else {
+            this.coord = null;
+            ai();
+        }else {
             return;
         }
         selected = !selected;
@@ -71,7 +97,7 @@ public class Dama {
     private void select(int x, int y) {
         this.field[y][x] += 4;
         coord = new Coordinate(x,y);
-        updateValidMoves(getValue(x,y)-4);
+        validMoves = Utils.updateValidMoves(getValue(x,y)-4, this.coord, this.field);
         if(this.validMoves.isEmpty()) {
             selected = !selected;
             this.field[y][x] -= 4;
@@ -82,6 +108,7 @@ public class Dama {
         int smerX = (x-x1) / Math.abs(x-x1);
         int smerY = (y-y1) / Math.abs(y-y1);
         for (int i = 1; i < Math.abs(x-x1); i++) {
+//            System.out.println(this.field[ y-i*smerY][x - i*smerX]);
             this.field[ y-i*smerY][x - i*smerX] = 0;
         }
     }
@@ -125,55 +152,6 @@ public class Dama {
         return this.field[y][x];
     }
 
-    public void updateValidMoves(int type) {
-        if(type == 1 || type == 2) checkNormal(type, -1, this.coord);
-        else if(type == 3 || type == 4) {
-            checkDama(type, 1, 1);
-            checkDama(type, -1, -1);
-            checkDama(type, 1, -1);
-            checkDama(type, -1, 1);
-        }
-    }
-
-    private void checkNormal(int type, int jump, Coordinate coord2) {
-        int direction = 1;
-        if(type == 1) direction = -1;
-        if(jump == -1 && isInField(coord2.getX() + 1,coord2.getY() + direction) && getValue(coord2.getX() + 1, coord2.getY()+direction) == 0) this.validMoves.add(new Coordinate(coord2.getX() + 1, coord2.getY()+direction));
-        if(jump == -1 && isInField(coord2.getX() - 1,coord2.getY() + direction) && getValue(coord2.getX() - 1, coord2.getY()+direction) == 0) this.validMoves.add(new Coordinate(coord2.getX() - 1, coord2.getY()+direction));
-        if((jump == -1 || jump == 1) && isInField(coord2.getX() + 1,coord2.getY() + direction) && getValue(coord2.getX() + 1, coord2.getY()+direction) % 2 == 1 && isInField(coord2.getX() + 2,coord2.getY() + direction*2) && getValue(coord2.getX() + 2, coord2.getY()+direction*2) == 0 && type == 2) {
-            this.validMoves.add(new Coordinate(coord2.getX() + 2, coord2.getY() + direction * 2));
-            checkNormal(type, 1, new Coordinate(coord2.getX() + 2, coord2.getY() + direction * 2));
-        }
-        else if((jump == -1 || jump == 2) && isInField(coord2.getX() + 1,coord2.getY() + direction) && getValue(coord2.getX() + 1, coord2.getY()+direction) % 2 == 0 && getValue(coord2.getX() + 1, coord2.getY()+direction) != 0 && isInField(coord2.getX() + 2,coord2.getY() + direction*2) && getValue(coord2.getX() + 2, coord2.getY()+direction*2) == 0 && type == 1) {
-            this.validMoves.add(new Coordinate(coord2.getX() + 2, coord2.getY() + direction * 2));
-            checkNormal(type, 2, new Coordinate(coord2.getX() + 2, coord2.getY() + direction * 2));
-        }
-        if((jump == -1 || jump == 3) && isInField(coord2.getX() - 1,coord2.getY() + direction) && getValue(coord2.getX() - 1, coord2.getY()+direction) % 2 == 1 && isInField(coord2.getX() - 2,coord2.getY() + direction*2) && getValue(coord2.getX() - 2, coord2.getY()+direction*2) == 0 && type == 2) {
-            this.validMoves.add(new Coordinate(coord2.getX() - 2, coord2.getY() + direction * 2));
-            checkNormal(type, 3, new Coordinate(coord2.getX() - 2, coord2.getY() + direction * 2));
-        }
-        else if((jump == -1 || jump == 4) && isInField(coord2.getX() - 1,coord2.getY() + direction) && getValue(coord2.getX() - 1, coord2.getY()+direction) % 2 == 0 && getValue(coord2.getX() - 1, coord2.getY()+direction) != 0 && isInField(coord2.getX() - 2,coord2.getY() + direction*2) && getValue(coord2.getX() - 2, coord2.getY()+direction*2) == 0 && type == 1) {
-            this.validMoves.add(new Coordinate(coord2.getX() - 2, coord2.getY() + direction * 2));
-            checkNormal(type, 4, new Coordinate(coord2.getX() - 2, coord2.getY() + direction * 2));
-        }
-    }
-
-    private void checkDama(int type, int x, int y) {
-        int acX = coord.getX()+x;
-        int acY = coord.getY()+y;
-        while(isInField(acX, acY)) {
-            if(type % 2 != 0 && this.field[acY][acX] % 2 != 0) {
-                break;
-            } else if(type % 2 == 0 && this.field[acY][acX] % 2 == 0 && type != 0 && this.field[acY][acX] % 2 == 0 && this.field[acY][acX]  != 0 ) {
-                break;
-            } else if(this.field[acY][acX]  == 0) {
-                this.validMoves.add(new Coordinate(acX, acY));
-            }
-            acX+=x;
-            acY+=y;
-        }
-    }
-
     private void normalToDama() {
         for (int i = 0; i < this.field[0].length; i++) {
             if(this.field[0][i] == 1) this.field[0][i] = 3;
@@ -182,10 +160,6 @@ public class Dama {
         for (int i = 0; i < this.field[this.field.length-1].length; i++) {
             if(this.field[this.field.length-1][i] == 2) this.field[this.field.length-1][i] = 4;
         }
-    }
-
-    private boolean isInField(int x, int y) {
-        return x>= 0 && y >= 0 && x < getRows() && y < getColumns();
     }
 
     public ArrayList<Coordinate> getValidMoves() {
