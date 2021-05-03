@@ -4,9 +4,10 @@ import java.util.ArrayList;
 
 public class AI {
     private Move best;
+    private final int hloubka = 2;
 
     public Move getBest(int[][] field) {
-        minimax(2,true, field);
+        minimax(this.hloubka,true, field, Integer.MIN_VALUE, Integer.MAX_VALUE);
         return best;
     }
 
@@ -41,17 +42,15 @@ public class AI {
         }
         return stones;
     }
-//TODO: alfa-beta pruning
-    private int minimax(int h, boolean black, int[][] field) {
+
+
+    private int minimax(int h, boolean black, int[][] field, int alfa, int beta) {
         int[] remainingStones = remainingStones(field);
         if(h == 0 || remainingStones[0] == 0 || remainingStones[1] == 0){
             return status(field);
         }
-
-        IntegerFunction f;
-
+        IntegerFunction f = (a,b) -> Math.min(a,b);
         if(black) f = (a,b) -> Math.max(a,b);
-        else f = (a,b) -> Math.min(a,b);
 
         int bestStatus = black ? Integer.MIN_VALUE : Integer.MAX_VALUE;
         ArrayList<Move> validMoves = getAllValidMoves(black, field);
@@ -59,11 +58,23 @@ public class AI {
             int[][] tmpField = new int[field.length][field.length];
             for (int i = 0; i < field.length; i++) System.arraycopy(field[i], 0, tmpField[i], 0, field[i].length);
             tryMove(move, tmpField, black);
-            int status = minimax(h - 1, !black, tmpField);
+            int status = minimax(h - 1, !black, tmpField, alfa, beta);
             bestStatus = f.run(bestStatus, status);
-            if (bestStatus == status && black) this.best = move;
+
+            //Alfa beta
+            if(black) {
+                if(status > alfa) {
+                    alfa = status;
+                    if(h == this.hloubka) this.best = move;
+                }
+                if(alfa >= beta) return alfa;
+            } else {
+                if(status <= beta) beta = status;
+                if(alfa >= beta) return beta;
+            }
         }
-        return bestStatus;
+        if(black) return alfa;
+        return beta;
     }
 
     private void tryMove(Move move, int[][] field, boolean black) {

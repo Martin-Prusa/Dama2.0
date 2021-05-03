@@ -166,8 +166,4 @@ public class Dama {
        return validMoves;
     }
 
-    public boolean getSelected() {
-        return this.selected;
-    }
-
 }
